@@ -6,11 +6,12 @@ require('dotenv').config();
 
 console.log('Testing connection to Kinsta PostgreSQL database...\n');
 
+// Kinsta internal connections don't use SSL
+const isKinstaInternal = process.env.DATABASE_URL && process.env.DATABASE_URL.includes('.svc.cluster.local');
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false // Required for Kinsta
-  }
+  ssl: isKinstaInternal ? false : { rejectUnauthorized: false }
 });
 
 async function testConnection() {

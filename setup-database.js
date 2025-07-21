@@ -6,11 +6,12 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
+// Kinsta internal connections don't use SSL
+const isKinstaInternal = process.env.DATABASE_URL && process.env.DATABASE_URL.includes('.svc.cluster.local');
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
+  ssl: isKinstaInternal ? false : { rejectUnauthorized: false }
 });
 
 async function setupDatabase() {
