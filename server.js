@@ -10,10 +10,43 @@ const app = express();
 
 // Middleware
 app.use(express.json());
-app.use(cors({
-  origin: process.env.WORDPRESS_URL || 'https://quit-os.com',
-  credentials: true
-}));
+
+// Parse CORS origins from environment variable
+const getCorsOrigins = () => {
+  const corsOrigins = process.env.CORS_ORIGINS || process.env.WORDPRESS_URL || 'https://quit-os.com';
+  // Split by comma and trim whitespace
+  return corsOrigins.split(',').map(origin => origin.trim());
+};
+
+// Configure CORS with dynamic origin checking
+const corsOptions = {
+  origin: function (origin, callback) {
+    const allowedOrigins = getCorsOrigins();
+    
+    // Log for debugging
+    console.log('Request origin:', origin);
+    console.log('Allowed origins:', allowedOrigins);
+    
+    // Allow requests with no origin (like mobile apps or Postman)
+    if (!origin) {
+      return callback(null, true);
+    }
+    
+    // Check if the origin is in our allowed list
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-WP-Nonce'],
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 
 // PostgreSQL connection pool
 // Kinsta internal connections don't use SSL
